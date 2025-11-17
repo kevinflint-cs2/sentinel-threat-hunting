@@ -1,0 +1,225 @@
+// ============================================================================
+// Persistence Mechanism Detection Queries
+// ============================================================================
+// Description: Hunt for persistence mechanisms used by adversaries
+// Data Sources: SecurityEvent, DeviceRegistryEvents, DeviceFileEvents
+// MITRE ATT&CK: T1547, T1053, T1098 (Persistence)
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. Suspicious Registry Run Key Modifications
+// ----------------------------------------------------------------------------
+// Detects modifications to common registry autorun locations
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID == 4657 // Registry value modified
+| where ObjectName has_any (
+    "\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+    "\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
+    "\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce",
+    "\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "\\CurrentVersion\\Windows\\Load",
+    "\\CurrentVersion\\Windows\\Run"
+)
+| extend 
+    RegistryKey = ObjectName,
+    ValueName = ObjectValueName,
+    ValueData = tostring(EventData),
+    ModifiedBy = Account
+| where ValueData has_any (".exe", ".bat", ".ps1", ".vbs", ".dll", "powershell", "cmd")
+| project 
+    TimeGenerated,
+    Computer,
+    ModifiedBy,
+    RegistryKey,
+    ValueName,
+    ValueData,
+    Process = ProcessName
+| order by TimeGenerated desc
+
+// ----------------------------------------------------------------------------
+// 2. Scheduled Task Persistence
+// ----------------------------------------------------------------------------
+// Detects suspicious scheduled tasks for persistence
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID in (4698, 4702) // Task created or updated
+| extend 
+    TaskName = tostring(parse_xml(EventData).TaskName),
+    TaskContent = tostring(parse_xml(EventData).TaskContent)
+| where TaskContent has_any ("powershell", "cmd.exe", "wscript", "cscript", "rundll32", "mshta")
+    or TaskContent has_any (".ps1", ".vbs", ".bat", ".js")
+| extend Suspicious = case(
+    TaskContent has "hidden" or TaskContent has "bypass", "High",
+    TaskContent has "downloadstring" or TaskContent has "iex", "High",
+    TaskContent has "base64" or TaskContent has "-enc", "High",
+    "Medium"
+)
+| project 
+    TimeGenerated,
+    Computer,
+    Account,
+    TaskName,
+    TaskContent,
+    Suspicious
+| order by Suspicious desc, TimeGenerated desc
+
+// ----------------------------------------------------------------------------
+// 3. WMI Event Subscription for Persistence
+// ----------------------------------------------------------------------------
+// Detects WMI event subscriptions used for persistence
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID == 5861 or EventID == 5859 // WMI activity
+| where OperationType has_any ("Created", "Modified")
+| where Operation has_any ("EventFilter", "EventConsumer", "FilterToConsumerBinding")
+| project 
+    TimeGenerated,
+    Computer,
+    Account,
+    Operation,
+    OperationType,
+    Query = tostring(EventData)
+| order by TimeGenerated desc
+
+// ----------------------------------------------------------------------------
+// 4. Startup Folder Persistence
+// ----------------------------------------------------------------------------
+// Detects file creation in startup folders
+let StartupFolders = dynamic([
+    "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
+    "\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+]);
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID == 4663 // Object access
+| where ObjectName has_any (StartupFolders)
+| where AccessMask has "0x2" // Write access
+| where ObjectName has_any (".exe", ".bat", ".vbs", ".ps1", ".lnk")
+| summarize 
+    FirstSeen = min(TimeGenerated),
+    LastSeen = max(TimeGenerated),
+    AccessCount = count(),
+    Files = make_set(ObjectName, 10)
+    by Account, Computer
+| order by AccessCount desc
+
+// ----------------------------------------------------------------------------
+// 5. Service Creation for Persistence
+// ----------------------------------------------------------------------------
+// Detects new services created for persistence
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID in (4697, 7045) // Service installed
+| where ServiceType != "0x10" // Exclude legitimate Win32 drivers
+| where ServiceFileName has_any (".exe", ".bat", ".ps1", ".dll")
+| where ServiceFileName !has "\\Windows\\"
+| extend Severity = case(
+    ServiceFileName has_any ("powershell", "cmd", "wscript", "rundll32"), "High",
+    ServiceStartType == "Auto Start", "Medium",
+    "Low"
+)
+| project 
+    TimeGenerated,
+    Computer,
+    ServiceName,
+    ServiceFileName,
+    ServiceStartType,
+    ServiceAccount,
+    Account,
+    Severity
+| order by Severity desc, TimeGenerated desc
+
+// ----------------------------------------------------------------------------
+// 6. DLL Hijacking - Suspicious DLL Loads
+// ----------------------------------------------------------------------------
+// Detects potential DLL hijacking attempts
+SecurityEvent
+| where TimeGenerated > ago(24h)
+| where EventID == 4688 // Process creation
+| where CommandLine has "rundll32.exe"
+| where CommandLine !has "\\Windows\\System32\\" and CommandLine !has "\\Windows\\SysWOW64\\"
+| extend DLLPath = extract(@"rundll32\.exe\s+([^,]+)", 1, CommandLine)
+| where isnotempty(DLLPath)
+| project 
+    TimeGenerated,
+    Computer,
+    Account,
+    DLLPath,
+    CommandLine,
+    ParentProcessName
+| order by TimeGenerated desc
+
+// ----------------------------------------------------------------------------
+// 7. Account Manipulation - New Admin Account Creation
+// ----------------------------------------------------------------------------
+// Detects creation of new accounts, especially with admin privileges
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID in (4720, 4722, 4724) // Account created, enabled, or password reset
+| extend 
+    NewAccount = TargetUserName,
+    CreatedBy = SubjectUserName,
+    EventType = case(
+        EventID == 4720, "Account Created",
+        EventID == 4722, "Account Enabled",
+        EventID == 4724, "Password Reset",
+        "Unknown"
+    )
+| join kind=leftouter (
+    SecurityEvent
+    | where TimeGenerated > ago(7d)
+    | where EventID in (4728, 4732, 4756) // Added to group
+    | extend NewAccount = MemberName
+) on NewAccount
+| project 
+    TimeGenerated,
+    Computer,
+    NewAccount,
+    CreatedBy,
+    EventType,
+    GroupName = TargetUserName1,
+    Domain = TargetDomainName
+| order by TimeGenerated desc
+
+// ----------------------------------------------------------------------------
+// 8. Bootkit/Bootloader Persistence
+// ----------------------------------------------------------------------------
+// Detects modifications to boot configuration
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID == 4688
+| where Process has_any ("bcdedit.exe", "bootcfg.exe", "diskpart.exe")
+| where CommandLine has_any ("set", "create", "import", "active")
+| project 
+    TimeGenerated,
+    Computer,
+    Account,
+    Process,
+    CommandLine,
+    ParentProcessName
+| order by TimeGenerated desc
+
+// ----------------------------------------------------------------------------
+// 9. Browser Extension Persistence
+// ----------------------------------------------------------------------------
+// Detects installation of browser extensions
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID == 4663 // Object access
+| where ObjectName has_any (
+    "\\AppData\\Local\\Google\\Chrome\\User Data",
+    "\\AppData\\Local\\Microsoft\\Edge\\User Data",
+    "\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles"
+)
+| where ObjectName has_any ("Extensions", "extensions")
+| where AccessMask has "0x2" // Write
+| project 
+    TimeGenerated,
+    Computer,
+    Account,
+    ObjectName,
+    ProcessName,
+    AccessMask
+| order by TimeGenerated desc

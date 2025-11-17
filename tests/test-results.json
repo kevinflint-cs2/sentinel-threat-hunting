@@ -1,0 +1,555 @@
+{
+  "timestamp": "2025-11-17T17:32:52.578686",
+  "total_passed": 50,
+  "total_failed": 0,
+  "results": [
+    {
+      "file": "command-and-control.kql",
+      "total_queries": 8,
+      "passed": 8,
+      "failed": 0,
+      "query_results": [
+        {
+          "query_number": 1,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 28
+          }
+        },
+        {
+          "query_number": 2,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 30
+          }
+        },
+        {
+          "query_number": 3,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 30
+          }
+        },
+        {
+          "query_number": 4,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 17
+          }
+        },
+        {
+          "query_number": 5,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 24
+          }
+        },
+        {
+          "query_number": 6,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 14
+          }
+        },
+        {
+          "query_number": 7,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 24
+          }
+        },
+        {
+          "query_number": 8,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 23
+          }
+        }
+      ]
+    },
+    {
+      "file": "credential-access.kql",
+      "total_queries": 10,
+      "passed": 10,
+      "failed": 0,
+      "query_results": [
+        {
+          "query_number": 1,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 19
+          }
+        },
+        {
+          "query_number": 2,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 27
+          }
+        },
+        {
+          "query_number": 3,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 18
+          }
+        },
+        {
+          "query_number": 4,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 30
+          }
+        },
+        {
+          "query_number": 5,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 17
+          }
+        },
+        {
+          "query_number": 6,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 14
+          }
+        },
+        {
+          "query_number": 7,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 17
+          }
+        },
+        {
+          "query_number": 8,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 18
+          }
+        },
+        {
+          "query_number": 9,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 19
+          }
+        },
+        {
+          "query_number": 10,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 14
+          }
+        }
+      ]
+    },
+    {
+      "file": "data-exfiltration.kql",
+      "total_queries": 9,
+      "passed": 9,
+      "failed": 0,
+      "query_results": [
+        {
+          "query_number": 1,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 22
+          }
+        },
+        {
+          "query_number": 2,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 26
+          }
+        },
+        {
+          "query_number": 3,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 17
+          }
+        },
+        {
+          "query_number": 4,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 25
+          }
+        },
+        {
+          "query_number": 5,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 23
+          }
+        },
+        {
+          "query_number": 6,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 18
+          }
+        },
+        {
+          "query_number": 7,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 21
+          }
+        },
+        {
+          "query_number": 8,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 16
+          }
+        },
+        {
+          "query_number": 9,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 29
+          }
+        }
+      ]
+    },
+    {
+      "file": "lateral-movement.kql",
+      "total_queries": 6,
+      "passed": 6,
+      "failed": 0,
+      "query_results": [
+        {
+          "query_number": 1,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 19
+          }
+        },
+        {
+          "query_number": 2,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 20
+          }
+        },
+        {
+          "query_number": 3,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 16
+          }
+        },
+        {
+          "query_number": 4,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 13
+          }
+        },
+        {
+          "query_number": 5,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 16
+          }
+        },
+        {
+          "query_number": 6,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": true,
+            "line_count": 16
+          }
+        }
+      ]
+    },
+    {
+      "file": "persistence.kql",
+      "total_queries": 9,
+      "passed": 9,
+      "failed": 0,
+      "query_results": [
+        {
+          "query_number": 1,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 27
+          }
+        },
+        {
+          "query_number": 2,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 22
+          }
+        },
+        {
+          "query_number": 3,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 13
+          }
+        },
+        {
+          "query_number": 4,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 17
+          }
+        },
+        {
+          "query_number": 5,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 21
+          }
+        },
+        {
+          "query_number": 6,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 15
+          }
+        },
+        {
+          "query_number": 7,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 27
+          }
+        },
+        {
+          "query_number": 8,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 13
+          }
+        },
+        {
+          "query_number": 9,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 18
+          }
+        }
+      ]
+    },
+    {
+      "file": "privilege-escalation.kql",
+      "total_queries": 8,
+      "passed": 8,
+      "failed": 0,
+      "query_results": [
+        {
+          "query_number": 1,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 23
+          }
+        },
+        {
+          "query_number": 2,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 16
+          }
+        },
+        {
+          "query_number": 3,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 14
+          }
+        },
+        {
+          "query_number": 4,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 25
+          }
+        },
+        {
+          "query_number": 5,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 15
+          }
+        },
+        {
+          "query_number": 6,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 13
+          }
+        },
+        {
+          "query_number": 7,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": true,
+            "has_project": false,
+            "line_count": 14
+          }
+        },
+        {
+          "query_number": 8,
+          "result": {
+            "syntax_valid": true,
+            "has_time_filter": true,
+            "has_summarize": false,
+            "has_project": true,
+            "line_count": 15
+          }
+        }
+      ]
+    }
+  ]
+}

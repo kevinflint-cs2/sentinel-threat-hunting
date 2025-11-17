@@ -1,0 +1,186 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "PlaybookName": {
+      "type": "string",
+      "defaultValue": "EnrichIPWithThreatIntel",
+      "metadata": {
+        "description": "Name of the Logic App playbook"
+      }
+    },
+    "SentinelWorkspaceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Sentinel workspace ID"
+      }
+    }
+  },
+  "variables": {
+    "SentinelConnectionName": "[concat('azuresentinel-', parameters('PlaybookName'))]",
+    "VirusTotalConnectionName": "[concat('virustotal-', parameters('PlaybookName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/connections",
+      "apiVersion": "2016-06-01",
+      "name": "[variables('SentinelConnectionName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "Azure Sentinel Connection",
+        "customParameterValues": {},
+        "api": {
+          "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuresentinel')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[parameters('PlaybookName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', variables('SentinelConnectionName'))]"
+      ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "When_Azure_Sentinel_incident_creation_rule_was_triggered": {
+              "type": "ApiConnectionWebhook",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                  }
+                },
+                "body": {
+                  "callback_url": "@{listCallbackUrl()}"
+                },
+                "path": "/incident-creation"
+              }
+            }
+          },
+          "actions": {
+            "Extract_IP_Addresses": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "IPAddresses",
+                    "type": "array",
+                    "value": "@triggerBody()?['object']?['properties']?['relatedEntities']"
+                  }
+                ]
+              },
+              "runAfter": {}
+            },
+            "For_each_IP": {
+              "type": "Foreach",
+              "foreach": "@variables('IPAddresses')",
+              "actions": {
+                "Condition_Check_IP_Type": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@items('For_each_IP')['kind']",
+                          "Ip"
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "HTTP_Query_VirusTotal": {
+                      "type": "Http",
+                      "inputs": {
+                        "method": "GET",
+                        "uri": "https://www.virustotal.com/vtapi/v2/ip-address/report?apikey=YOUR_API_KEY&ip=@{items('For_each_IP')['properties']['address']}"
+                      },
+                      "runAfter": {}
+                    },
+                    "Parse_VirusTotal_Response": {
+                      "type": "ParseJson",
+                      "inputs": {
+                        "content": "@body('HTTP_Query_VirusTotal')",
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "detected_urls": {
+                              "type": "array"
+                            },
+                            "country": {
+                              "type": "string"
+                            },
+                            "asn": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "HTTP_Query_VirusTotal": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Add_comment_to_incident": {
+                      "type": "ApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                          }
+                        },
+                        "method": "post",
+                        "path": "/Incidents/Comment",
+                        "body": {
+                          "incidentArmId": "@triggerBody()?['object']?['id']",
+                          "message": "IP Enrichment for @{items('For_each_IP')['properties']['address']}:\nCountry: @{body('Parse_VirusTotal_Response')?['country']}\nASN: @{body('Parse_VirusTotal_Response')?['asn']}\nDetected URLs: @{length(body('Parse_VirusTotal_Response')?['detected_urls'])}"
+                        }
+                      },
+                      "runAfter": {
+                        "Parse_VirusTotal_Response": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Extract_IP_Addresses": [
+                  "Succeeded"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azuresentinel": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('SentinelConnectionName'))]",
+                "connectionName": "[variables('SentinelConnectionName')]",
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuresentinel')]"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

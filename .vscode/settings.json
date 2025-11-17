@@ -1,0 +1,11 @@
+{
+  "python.analysis.typeCheckingMode": "basic",
+  "ruff.organizeImports": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true
+  },
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false
+}

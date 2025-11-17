@@ -1,0 +1,3 @@
+- Use Poetry
+- Use virtual environments
+- Follow coding standards (PEP 8)
