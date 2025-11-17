@@ -24,4 +24,3 @@ else:
     raise RuntimeError("Query failed")
 
 df = pd.DataFrame(table.rows, columns=table.columns)
-print(df.columns)
