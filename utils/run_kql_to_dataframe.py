@@ -1,13 +1,14 @@
+from dotenv import load_dotenv
 import os
-
+from azure.identity import ManagedIdentityCredential
+from azure.monitor.query import LogsQueryClient
 import pandas as pd
-from azure.identity import DeviceCodeCredential
-from azure.monitor.query import LogsQueryClient, LogsQueryStatus
 
-# Use device code flow for Codespaces/remote environments
-cred = DeviceCodeCredential()  # Will prompt with a code to enter in browser
-workspace_id = os.getenv("SENTINEL_WORKSPACE_ID", "your-workspace-id-here")
-client = LogsQueryClient(credential=cred)  # Get LA Query Client
+
+load_dotenv()  # loads variables from .env into the process
+cred = ManagedIdentityCredential()  # no args if system-assigned; or pass client_id for UAMI
+workspace_id = os.getenv("SENTINEL_WORKSPACE_ID", "your-workspace-id-here-though-not-recommended")
+client = LogsQueryClient(credential=cred) # Get LA Query Client
 
 kql = """
 shodan_scan_CL

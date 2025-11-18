@@ -1,0 +1,9 @@
+// Test KQL Query with Template Variables
+// This query is used for testing template rendering
+
+DeviceEvents
+| where DeviceName == "{{ devicename }}"
+| where AccountName == "{{ username }}"
+| where Timestamp >= datetime({{ start_time }})
+| where Timestamp <= datetime({{ end_time }})
+| where ProcessName == "{{ process_name }}"

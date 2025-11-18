@@ -1,0 +1,26 @@
+# Test Configuration File
+# Used by pytest to validate config loading and template rendering
+
+# Investigation metadata
+investigation_name: "Test Investigation"
+investigator: "Test Analyst"
+created_date: "2025-11-17"
+
+# Time range for queries
+start_time: "2025-11-01T00:00:00Z"
+end_time: "2025-11-17T23:59:59Z"
+
+# Entity identifiers
+devicename: "TEST-DEVICE-001"
+username: "test.user"
+ip_address: "192.168.1.100"
+domain: "testdomain.com"
+
+# Process information
+process_name: "powershell.exe"
+parent_process: "cmd.exe"
+file_path: "C:\\Windows\\System32\\test.exe"
+
+# Threat indicators
+suspicious_hash: "abc123def456"
+known_bad_ip: "10.0.0.1"

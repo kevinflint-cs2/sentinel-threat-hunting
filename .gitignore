@@ -222,3 +222,6 @@ poetry.lock
 
 # Ruff
 .ruff_cache/
+
+# Investigations folder - ignore all subfolders but track the folder itself
+investigations/*/

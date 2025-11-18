@@ -4,19 +4,23 @@
 // Description: Hunt for signs of lateral movement across the network
 // Data Sources: SecurityEvent, DeviceNetworkEvents, SigninLogs
 // MITRE ATT&CK: T1021 (Remote Services)
+//
+// Template Variables:
+//   Required: devicename, username, start_time, end_time
+//   Optional: ip_address, domain
 // ============================================================================
 
 // ----------------------------------------------------------------------------
 // 1. Suspicious RDP Connections from Unusual Sources
 // ----------------------------------------------------------------------------
 // Detects RDP (3389) connections from uncommon internal sources or after hours
-let timeframe = 7d;
 let knownAdminSources = dynamic(["10.0.1.10", "10.0.1.11"]); // Update with your admin IPs
 SecurityEvent
-| where TimeGenerated > ago(timeframe)
+| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))
 | where EventID == 4624 // Successful logon
 | where LogonType == 10 // RemoteInteractive (RDP)
 | where IpAddress !in (knownAdminSources)
+| where Computer has "{{ devicename }}" or Account has "{{ username }}"
 | extend Hour = hourofday(TimeGenerated)
 | where Hour < 6 or Hour > 22 // After hours
 | summarize 
@@ -35,10 +39,11 @@ SecurityEvent
 // ----------------------------------------------------------------------------
 // Detects connections to admin shares (C$, ADMIN$) potentially for lateral movement
 SecurityEvent
-| where TimeGenerated > ago(7d)
+| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))
 | where EventID == 5140 // Network share object accessed
 | where ShareName in ("\\\\*\\C$", "\\\\*\\ADMIN$", "\\\\*\\IPC$")
 | where AccessMask has "0x2" // Write access
+| where Computer has "{{ devicename }}" or SubjectUserName has "{{ username }}"
 | summarize 
     FirstAccess = min(TimeGenerated),
     LastAccess = max(TimeGenerated),
@@ -60,10 +65,11 @@ SecurityEvent
 // ----------------------------------------------------------------------------
 // Detects potential pass-the-hash attacks by identifying multiple logons from same hash
 SecurityEvent
-| where TimeGenerated > ago(24h)
+| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))
 | where EventID == 4624
 | where LogonType in (3, 9) // Network or NewCredentials
 | where AuthenticationPackageName == "NTLM"
+| where Computer has "{{ devicename }}" or Account has "{{ username }}"
 | extend NTLMHash = extract(@"NTLM only:\s*([A-Fa-f0-9]+)", 1, tostring(LogonProcessName))
 | where isnotempty(NTLMHash)
 | summarize 
@@ -81,10 +87,11 @@ SecurityEvent
 // ----------------------------------------------------------------------------
 // Detects PSExec-style lateral movement via service creation
 SecurityEvent
-| where TimeGenerated > ago(24h)
+| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))
 | where EventID in (4697, 7045) // Service installed / Service was installed in the system
 | where ServiceName has_any ("PSEXESVC", "PAExec", "RemCom")
     or ServiceFileName has_any ("psexesvc.exe", "paexec.exe", "remcom.exe", "\\\\127.0.0.1\\")
+| where Computer has "{{ devicename }}" or Account has "{{ username }}"
 | summarize 
     FirstSeen = min(TimeGenerated),
     LastSeen = max(TimeGenerated),
@@ -99,10 +106,11 @@ SecurityEvent
 // ----------------------------------------------------------------------------
 // Detects WMI being used to execute commands on remote systems
 SecurityEvent
-| where TimeGenerated > ago(24h)
+| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))
 | where EventID == 4688 // Process creation
 | where Process has_any ("wmic.exe", "powershell.exe")
 | where CommandLine has_any ("node:", "/node:", "process call create")
+| where Computer has "{{ devicename }}" or Account has "{{ username }}"
 | extend RemoteHost = extract(@"(?:node:|/node:)(\S+)", 1, CommandLine)
 | where isnotempty(RemoteHost)
 | summarize 
@@ -120,14 +128,16 @@ SecurityEvent
 // ----------------------------------------------------------------------------
 // Detects potential credential brute forcing followed by successful lateral movement
 let FailedLogons = SecurityEvent
-| where TimeGenerated > ago(1h)
+| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))
 | where EventID == 4625 // Failed logon
 | where LogonType in (3, 10) // Network or RDP
+| where Computer has "{{ devicename }}" or Account has "{{ username }}"
 | summarize FailedCount = count() by Account, IpAddress, Computer, bin(TimeGenerated, 5m);
 let SuccessfulLogons = SecurityEvent
-| where TimeGenerated > ago(1h)
+| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))
 | where EventID == 4624 // Successful logon
 | where LogonType in (3, 10)
+| where Computer has "{{ devicename }}" or Account has "{{ username }}"
 | summarize SuccessTime = max(TimeGenerated) by Account, IpAddress, Computer, bin(TimeGenerated, 5m);
 FailedLogons
 | join kind=inner (SuccessfulLogons) on Account, IpAddress, Computer
