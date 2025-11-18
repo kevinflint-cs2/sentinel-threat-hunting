@@ -42,6 +42,7 @@ type-check = "mypy tests/"
 secrets = "detect-secrets scan --baseline .secrets.baseline"
 secrets-audit = "detect-secrets audit .secrets.baseline"
 notebook = "jupyter lab --ip=0.0.0.0 --no-browser"
+render = { cmd = "python utils/render_query.py", help = "Render KQL query with config variables (usage: poe render <kql_file> [-c config])" }
 all = ["format", "lint", "type-check", "secrets", "validate", "test"]
 
 [tool.ruff]

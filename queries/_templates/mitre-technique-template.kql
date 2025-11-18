@@ -1,0 +1,37 @@
+// ============================================================================
+// [Query Name/Title]
+// ============================================================================
+// Description: [Detailed description of what this query detects and why]
+// Data Sources: [List of tables/logs used, e.g., DeviceEvents, SigninLogs]
+// MITRE ATT&CK: [Technique ID and name, e.g., T1021.001 - Remote Desktop Protocol]
+// Platform: [xdr/azure/aws/multi]
+//
+// Template Variables:
+//   Required: devicename, username, start_time, end_time
+//   Optional: ip_address, domain, process_name
+//
+// Detection Logic:
+//   [Brief explanation of the detection approach]
+//
+// False Positives:
+//   - [Common scenarios that may trigger false positives]
+//   - [How to tune or filter for your environment]
+//
+// References:
+//   - [Link to MITRE ATT&CK technique page]
+//   - [Link to relevant documentation or blog posts]
+// ============================================================================
+
+// Query implementation below
+// Use template variables with {{ variable_name }} syntax
+
+[YourTableName]
+| where Timestamp between (datetime({{ start_time }}) .. datetime({{ end_time }}))
+| where DeviceName has "{{ devicename }}" or AccountName has "{{ username }}"
+// Add your detection logic here
+| project 
+    Timestamp,
+    DeviceName,
+    AccountName,
+    // Add relevant fields
+| order by Timestamp desc
