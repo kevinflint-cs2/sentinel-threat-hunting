@@ -1,0 +1,37 @@
+title: Process Chain Analysis
+id: 69e64f51-d680-4870-9b0a-d32ddf242c87
+status: test
+description: Analyzes process execution chains for a specific user and/or device to
+  identify unusual parent-child process relationships and execution patterns. Useful
+  for detecting process injection, living-off-the-land techniques, and abnormal process
+  spawning behavior.
+references:
+- https://www.mitre.org/sites/default/files/2021-11/prs-19-3892-ttp-based-hunting.pdf
+- https://www.cyber.gov.au/about-us/view-all-content/alerts-and-advisories/identifying-and-mitigating-living-off-the-land-techniques
+author: Kevin Flint
+date: '2025-11-19'
+modified: '2025-11-19'
+tags:
+- attack.execution
+- attack.defense-evasion
+- attack.privilege-escalation
+- attack.t1055
+- attack.t1059
+- attack.t1106
+logsource:
+  product: windows
+  table: DeviceProcessEvents
+  category: process_creation
+kql: "DeviceProcessEvents\n| where TimeGenerated between ({{ start_time }} .. {{ end_time\
+  \ }})\n{% if device_name %}| where DeviceName contains \"{{ device_name }}\"\n{%\
+  \ endif %}{% if user_name %}| where AccountName contains \"{{ user_name }}\"\n{%\
+  \ endif %}| extend Combined = strcat_delim(\":\", AccountName, InitiatingProcessParentFileName,\
+  \ InitiatingProcessFileName, FileName)\n| summarize Count=count(), LastExecutionTime=max(Timestamp)\
+  \ by AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName,\
+  \ Combined \n| sort by Count desc"
+falsepositives:
+- Reduce Using Baseline
+- Legitimate administrative activity
+- Software installations and updates
+- Scheduled tasks and maintenance scripts
+level: low

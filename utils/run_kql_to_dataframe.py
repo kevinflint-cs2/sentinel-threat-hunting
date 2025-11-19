@@ -1,14 +1,14 @@
-from dotenv import load_dotenv
 import os
-from azure.identity import ManagedIdentityCredential
-from azure.monitor.query import LogsQueryClient
-import pandas as pd
 
+import pandas as pd
+from azure.identity import ManagedIdentityCredential
+from azure.monitor.query import LogsQueryClient, LogsQueryStatus
+from dotenv import load_dotenv
 
 load_dotenv()  # loads variables from .env into the process
 cred = ManagedIdentityCredential()  # no args if system-assigned; or pass client_id for UAMI
 workspace_id = os.getenv("SENTINEL_WORKSPACE_ID", "your-workspace-id-here-though-not-recommended")
-client = LogsQueryClient(credential=cred) # Get LA Query Client
+client = LogsQueryClient(credential=cred)  # Get LA Query Client
 
 kql = """
 shodan_scan_CL

@@ -138,7 +138,6 @@ def main():
     if not query_dir.exists():
         sys.exit(1)
 
-
     validator = KQLValidator()
     total_files = 0
     passed_files = 0
@@ -161,8 +160,6 @@ def main():
 
         if success:
             passed_files += 1
-
-
 
     sys.exit(0 if passed_files == total_files else 1)
 
