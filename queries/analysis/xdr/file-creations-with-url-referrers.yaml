@@ -1,0 +1,40 @@
+title: File Creations with URL Referer's
+id: 8c4b7d3e-5f2a-4c9b-8e1d-6a7f9b3c2e5d
+status: test
+description: Detects file creation events that include URL origin or referrer information, which typically indicates files downloaded from the internet. This query helps identify potentially suspicious downloads by tracking files with browser or application referer metadata, useful for detecting malware delivery, phishing attachments, or unauthorized file downloads.
+references:
+  - https://attack.mitre.org/techniques/T1566/001/
+  - https://attack.mitre.org/techniques/T1105/
+  - https://learn.microsoft.com/en-us/defender-endpoint/advanced-hunting-devicefileevents-table
+  - https://www.microsoft.com/en-us/security/blog/2021/01/20/deep-dive-into-the-solorigate-second-stage-activation-from-sunburst-to-teardrop-and-raindrop/
+author: Kevin Flint
+date: 2025-11-19
+modified: 2025-11-19
+tags:
+  - attack.initial-access
+  - attack.command-and-control
+  - attack.t1566.001
+  - attack.t1105
+  - xdr
+  - windows
+logsource:
+  product: xdr
+  table: DeviceFileEvents
+  category: file_event
+kql: |
+  DeviceFileEvents
+  | where TimeGenerated between (datetime("{{ start_time }}") .. datetime("{{ end_time }}"))
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}{% if user_name %}| where InitiatingProcessAccountName contains "{{ user_name }}"
+  {% endif %}| where ActionType contains "FileCreated"
+  | where isnotempty(FileOriginUrl) or isnotempty(FileOriginReferrerUrl)
+falsepositives:
+  - Legitimate software downloads from trusted vendors and update sites
+  - Business applications downloading files from approved cloud storage services
+  - Users downloading work-related documents from corporate SharePoint or OneDrive
+  - Browser extensions or plugins downloading updates automatically
+  - IT administrators downloading tools and utilities for system maintenance
+level: low
+detection:
+  selection: {}
+  condition: ""

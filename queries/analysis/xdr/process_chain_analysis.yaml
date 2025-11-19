@@ -22,13 +22,7 @@ logsource:
   product: windows
   table: DeviceProcessEvents
   category: process_creation
-kql: "DeviceProcessEvents\n| where TimeGenerated between ({{ start_time }} .. {{ end_time\
-  \ }})\n{% if device_name %}| where DeviceName contains \"{{ device_name }}\"\n{%\
-  \ endif %}{% if user_name %}| where AccountName contains \"{{ user_name }}\"\n{%\
-  \ endif %}| extend Combined = strcat_delim(\":\", AccountName, InitiatingProcessParentFileName,\
-  \ InitiatingProcessFileName, FileName)\n| summarize Count=count(), LastExecutionTime=max(Timestamp)\
-  \ by AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName,\
-  \ Combined \n| sort by Count desc"
+kql: "DeviceProcessEvents\n| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))\n{% if device_name %}| where DeviceName contains \"{{ device_name }}\"\n{% endif %}{% if user_name %}| where AccountName contains \"{{ user_name }}\"\n{% endif %}| extend Combined = strcat_delim(\":\", AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName)\n| summarize Count = count(), LastExecutionTime = max(TimeGenerated) by AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, Combined\n| sort by Count desc"
 falsepositives:
 - Reduce Using Baseline
 - Legitimate administrative activity

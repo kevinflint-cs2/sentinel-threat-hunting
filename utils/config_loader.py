@@ -7,7 +7,6 @@ investigations.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -72,7 +71,7 @@ def load_config(config_path: str) -> dict:
     return config_data
 
 
-def validate_config(config: dict, required_fields: Optional[list[str]] = None) -> bool:
+def validate_config(config: dict, required_fields: list[str] | None = None) -> bool:
     """
     Validate configuration dictionary has required fields.
 

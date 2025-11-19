@@ -15,7 +15,7 @@ Run test suites to validate module functionality through unit tests (mocked), en
 
 - **Test Framework:** pytest with markers (`mock`, `endpoint`, `live`)
 - **Test Location:** `tests/` directory with naming pattern `test_[module].py`
-- **Environment:** Virtual environment activated (`.venv/bin/activate`)
+- **Environment:** Managed by `poetry`. Run `poetry install` to create the virtual environment and install dependencies. Run tests with `poetry run pytest -vv` or enter a `poetry shell` and run `pytest -vv`.
 - **Authority:** May run tests and collect results; cannot modify code without approval
 - **Hard Rule:** Never write or execute destructive tests (no data modification, deletion, or reporting)
 
@@ -178,31 +178,50 @@ def test_live_health_check():
 
 ### Run Unit Tests Only
 ```bash
+# Preferred: run via Poetry
+poetry run pytest -m "mock" -vv
+
+# Alternatively, if inside a poetry shell
 pytest -m "mock" -vv
 ```
 
 ### Run Endpoint Tests
 ```bash
+poetry run pytest -m "endpoint" -vv
+
+# Or in a poetry shell:
 pytest -m "endpoint" -vv
 ```
 
 ### Run Unit + Endpoint Tests
 ```bash
+poetry run pytest -m "mock or endpoint" -vv
+
+# Or in a poetry shell:
 pytest -m "mock or endpoint" -vv
 ```
 
 ### Run All Safe Tests (Including Live)
 ```bash
+poetry run pytest -m "mock or endpoint or live" -vv
+
+# Or in a poetry shell:
 pytest -m "mock or endpoint or live" -vv
 ```
 
 ### Run Specific Module Tests
 ```bash
+poetry run pytest tests/test_module_name.py -vv
+
+# Or in a poetry shell:
 pytest tests/test_module_name.py -vv
 ```
 
 ### Run with Coverage
 ```bash
+poetry run pytest --cov=functions --cov-report=term-missing -vv
+
+# Or in a poetry shell:
 pytest --cov=functions --cov-report=term-missing -vv
 ```
 
@@ -210,10 +229,13 @@ pytest --cov=functions --cov-report=term-missing -vv
 
 ### Required for Live Tests
 ```bash
+# Install dependencies and create the virtual environment (run once)
+poetry install
+
 # Set API keys using Azure Functions CLI
 func settings add MODULE_API_KEY "your-key-here"  # pragma: allowlist secret
 
-# Or export for pytest execution
+# Or export for pytest execution (in a POSIX shell) or set in CI environment
 export MODULE_API_KEY="your-key-here"  # pragma: allowlist secret
 export APP_BASE_URL="http://localhost:7071"
 ```
@@ -240,11 +262,15 @@ def test_requires_credentials():
 Run the appropriate test suite based on scope:
 
 ```bash
-# Activate virtual environment first
-source .venv/bin/activate
+# Install dependencies (if not done yet)
+poetry install
 
-# Run tests with verbose output
-pytest -m "mock or endpoint" -vv
+# Preferred: run tests directly via Poetry
+poetry run pytest -m "mock or endpoint" -vv
+
+# Alternative: spawn a poetry shell and run pytest interactively
+poetry shell
+pytest -vv
 ```
 
 ### Step 2: Analyze Results
@@ -376,8 +402,8 @@ Approve fixes? (yes/no/specific)
 
 ### Default CI Pipeline
 ```bash
-# Run safe tests only
-pytest -m "mock or endpoint" -vv --junitxml=test-results.xml
+# Run safe tests only (via Poetry)
+poetry run pytest -m "mock or endpoint" -vv --junitxml=test-results.xml
 
 # Fail pipeline on any test failure
 # Exit code 0 = all pass, non-zero = failures
@@ -385,11 +411,11 @@ pytest -m "mock or endpoint" -vv --junitxml=test-results.xml
 
 ### Pre-deployment Validation
 ```bash
-# Full test suite including live tests
-pytest -m "mock or endpoint or live" -vv
+# Full test suite including live tests (via Poetry)
+poetry run pytest -m "mock or endpoint or live" -vv
 
 # Ensure no warnings
-pytest -vv --strict-warnings
+poetry run pytest -vv --strict-warnings
 ```
 
 ## Quality Assurance Checklist

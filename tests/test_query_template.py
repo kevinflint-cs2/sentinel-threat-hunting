@@ -169,7 +169,11 @@ def test_load_query_yaml(test_query_file_path):
 def test_load_query_yaml_missing_kql_field(temp_query_file):
     """Test that ValueError is raised when kql field is missing."""
     # Create YAML without kql field
-    query_data: dict[str, str] = {"title": "Test Query", "id": "test-123", "description": "Missing kql field"}
+    query_data: dict[str, str] = {
+        "title": "Test Query",
+        "id": "test-123",
+        "description": "Missing kql field",
+    }
 
     with open(temp_query_file, "w") as f:
         yaml.dump(query_data, f)
@@ -183,7 +187,11 @@ def test_load_query_yaml_missing_kql_field(temp_query_file):
 def test_load_query_yaml_invalid_kql_type(temp_query_file):
     """Test that ValueError is raised when kql field is not a string."""
     # Create YAML with kql as list instead of string
-    query_data: dict[str, object] = {"title": "Test Query", "id": "test-123", "kql": ["not", "a", "string"]}
+    query_data: dict[str, object] = {
+        "title": "Test Query",
+        "id": "test-123",
+        "kql": ["not", "a", "string"],
+    }
 
     with open(temp_query_file, "w") as f:
         yaml.dump(query_data, f)

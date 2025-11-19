@@ -1,0 +1,59 @@
+title: WMIC Process Analysis
+id: 9e0c2f3e-2a4f-4c3d-8f5d-6c9a1c4a8e2f
+status: test
+description: >
+  This query analyzes WMIC-related process activity on endpoints by examining executions
+  of wmiprvse.exe, wmiapsrv.exe, and winmgmt.exe along with their parent and child processes.
+  It summarizes executions per user and process chain, helping identify suspicious or unusual
+  WMI-based remote administration or lateral movement behavior.
+references:
+  - https://learn.microsoft.com/microsoft-365/security/defender/advanced-hunting-deviceprocessevents-table
+  - https://attack.mitre.org/techniques/T1047/
+  - https://learn.microsoft.com/windows/win32/wmisdk/wmi-start-page
+  - https://www.sigmahq-publisher.github.io/sigma-specification/#windows-process-creation
+author: Kevin Flint
+date: 2025-11-19
+modified: 2025-11-19
+tags:
+  - attack.execution
+  - attack.lateral-movement
+  - attack.discovery
+  - attack.t1047
+  - xdr
+  - windows
+  - process_creation
+  - threat-hunting
+logsource:
+  product: xdr
+  table: DeviceProcessEvents
+  category: process_creation
+kql: |
+  let procs = dynamic(["wmiprvse.exe", "wmiapsrv.exe", "winmgmt.exe"]);
+  DeviceProcessEvents
+  | where TimeGenerated between (datetime("{{ start_time }}") .. datetime("{{ end_time }}"))
+  {%- if device_name %}
+  | where DeviceName has "{{ device_name }}"
+  {%- endif %}
+  {%- if user_name %}
+  | where AccountName has "{{ user_name }}"
+  {%- endif %}
+  | where FileName has_any (procs) or InitiatingProcessFileName has_any (procs) or InitiatingProcessParentFileName has_any (procs)
+  | summarize Count = count(),
+              FirstExecutionTime = min(TimeGenerated),
+              LastExecutionTime = max(TimeGenerated)
+      by AccountName,
+         InitiatingProcessParentFileName,
+         InitiatingProcessFileName,
+         InitiatingProcessCommandLine,
+         FileName,
+         ProcessCommandLine
+  | sort by LastExecutionTime
+falsepositives:
+  - Routine remote administration using WMI by IT operations teams.
+  - Legitimate monitoring or inventory tools that rely on WMI for data collection.
+  - Software deployment or patch management systems using WMI to execute processes.
+  - Backup, EDR, or security management agents that orchestrate tasks via WMI.
+level: high
+detection:
+  selection: {}
+  condition: ""

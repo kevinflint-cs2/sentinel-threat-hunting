@@ -200,7 +200,7 @@ def test_validate_config_empty_dict():
 def test_validate_config_not_dict():
     """Test that ValueError is raised when config is not a dictionary."""
     with pytest.raises(ValueError) as excinfo:
-        validate_config(["not", "a", "dict"])
+        validate_config(["not", "a", "dict"])  # type: ignore[arg-type]
 
     assert "must be a dictionary" in str(excinfo.value)
 

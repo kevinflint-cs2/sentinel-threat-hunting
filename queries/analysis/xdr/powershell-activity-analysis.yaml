@@ -1,0 +1,36 @@
+title: Powershell Activity Analysis
+id: 8e39e9d2-6e0b-4d6c-9a2a-9e4f2c7f4d3e
+status: test
+description: >
+  This hunting query analyzes PowerShell activity for a specific user and
+  device over a selected time range using Defender for Endpoint
+  DeviceProcessEvents. It summarizes parent and child PowerShell processes,
+  commands, and execution frequency to help identify potentially suspicious
+  or abnormal PowerShell usage patterns for focused investigation.
+references:
+  - https://learn.microsoft.com/azure/sentinel/identify-potential-powershell-abuse
+  - https://learn.microsoft.com/microsoft-365/security/defender/advanced-hunting-deviceprocessevents-table
+  - https://attack.mitre.org/techniques/T1059/001/
+author: Kevin Flint
+date: 2025-11-19
+modified: 2025-11-19
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.001
+  - windows
+  - xdr
+  - process_creation
+logsource:
+  product: xdr
+  table: DeviceProcessEvents
+  category: process_creation
+kql: "let pwsh = dynamic([\"powershell.exe\", \"pwsh.exe\"]);\nDeviceProcessEvents\n| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))\n{% if device_name %}| where DeviceName contains \"{{ device_name }}\"\n{% endif %}{% if account_name %}| where AccountName contains \"{{ account_name }}\"\n{% endif %}| where FileName has_any(pwsh)\n    or InitiatingProcessFileName has_any(pwsh)\n    or InitiatingProcessParentFileName has_any(pwsh)\n| summarize Count = count(),\n            FirstExecutionTime = min(TimeGenerated),\n            LastExecutionTime = max(TimeGenerated)\n    by AccountName,\n       DeviceName,\n       InitiatingProcessParentFileName,\n       InitiatingProcessFileName,\n       InitiatingProcessCommandLine,\n       FileName,\n       ProcessCommandLine\n| order by Count desc, LastExecutionTime desc"
+falsepositives:
+  - Routine administrative PowerShell usage by IT staff
+  - Legitimate automation scripts and scheduled tasks
+  - Software installation, updates, and configuration management tools
+level: medium
+detection:
+  selection: {}
+  condition: ""
