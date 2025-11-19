@@ -1,0 +1,40 @@
+title: Local User Account Additions and Modifications
+id: 9d5e8f4a-6c3b-4d7e-9f2a-8b1c5e7d4a6f
+status: test
+description: Detects creation and modification of local user accounts on Windows systems, which can indicate unauthorized access attempts, privilege escalation, or persistence establishment. This query tracks user account lifecycle events while filtering out known administrative accounts to reduce noise and focus on potentially suspicious account management activity.
+references:
+  - https://attack.mitre.org/techniques/T1136/001/
+  - https://attack.mitre.org/techniques/T1098/
+  - https://learn.microsoft.com/en-us/defender-endpoint/advanced-hunting-deviceevents-table
+  - https://www.microsoft.com/en-us/security/blog/2023/08/24/flax-typhoon-using-legitimate-software-to-quietly-access-taiwanese-organizations/
+author: Kevin Flint
+date: 2025-11-19
+modified: 2025-11-19
+tags:
+  - attack.persistence
+  - attack.privilege-escalation
+  - attack.t1136.001
+  - attack.t1098
+  - xdr
+  - windows
+logsource:
+  product: xdr
+  table: DeviceEvents
+  category: user_account
+kql: |
+  DeviceEvents
+  | where TimeGenerated between (datetime("{{ start_time }}") .. datetime("{{ end_time }}"))
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}| where ActionType == "UserAccountCreated" or ActionType == "UserAccountModified"
+  {% if exclude_accounts %}| where AccountName !in (dynamic({{ exclude_accounts | tojson }}))
+  {% endif %}
+falsepositives:
+  - IT administrators creating accounts for new employees during onboarding
+  - Automated provisioning systems managing user accounts via configuration management tools
+  - Help desk staff creating temporary accounts for contractors or vendors
+  - System administrators modifying account properties during routine maintenance
+  - HR automation tools creating or updating accounts based on employee lifecycle events
+level: medium
+detection:
+  selection: {}
+  condition: ""

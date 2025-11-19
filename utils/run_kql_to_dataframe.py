@@ -1,3 +1,4 @@
+import logging
 import os
 
 import pandas as pd
@@ -9,6 +10,7 @@ load_dotenv()  # loads variables from .env into the process
 cred = ManagedIdentityCredential()  # no args if system-assigned; or pass client_id for UAMI
 workspace_id = os.getenv("SENTINEL_WORKSPACE_ID", "your-workspace-id-here-though-not-recommended")
 client = LogsQueryClient(credential=cred)  # Get LA Query Client
+logger = logging.getLogger(__name__)
 
 kql = """
 shodan_scan_CL
@@ -25,4 +27,4 @@ else:
     raise RuntimeError("Query failed")
 
 df = pd.DataFrame(table.rows, columns=table.columns)
-print(df.head())
+logger.info("%s", df.head())

@@ -5,7 +5,7 @@ This module provides functions to execute KQL queries against Azure
 Monitor/Sentinel workspaces and return results as pandas DataFrames.
 """
 
-from typing import Optional, Union
+from typing import Any, cast
 
 import pandas as pd
 from azure.monitor.query import LogsQueryClient, LogsQueryStatus
@@ -15,7 +15,7 @@ def execute_kql_query(
     client: LogsQueryClient,
     workspace_id: str,
     kql_query: str,
-    timespan: Optional[Union[str, tuple]] = None,
+    timespan: str | tuple | None = None,
 ) -> pd.DataFrame:
     """
     Execute a KQL query using a LogsQueryClient and return results.
@@ -72,7 +72,11 @@ def execute_kql_query(
 
     # Execute the KQL query against the workspace
     try:
-        response = client.query_workspace(workspace_id, kql_query, timespan=timespan)
+        # The Azure SDK expects timespan to be a timedelta or datetime tuple.
+        # Accept common string/tuple forms at the API boundary and cast to Any
+        # when calling the SDK to avoid mypy false-positives. Callers should
+        # pass a correctly-typed timespan when possible.
+        response = client.query_workspace(workspace_id, kql_query, timespan=cast(Any, timespan))
     except Exception as e:
         raise RuntimeError(f"Failed to execute KQL query: {str(e)}") from e
 

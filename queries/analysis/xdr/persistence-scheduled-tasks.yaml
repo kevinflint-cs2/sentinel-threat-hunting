@@ -1,0 +1,41 @@
+title: Persistance Using Scheduled Tasks
+id: 7f3a9c2e-4d1b-4e8f-9a3c-5b7e8d9f0a1c
+status: test
+description: Detects the use of schtasks.exe for scheduled task creation or modification, which is commonly used by attackers to establish persistence on Windows systems. This query tracks schtasks.exe execution patterns across parent-child process relationships to identify suspicious task scheduling activity that may indicate persistence mechanisms.
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+  - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/schtasks
+  - https://redcanary.com/threat-detection-report/techniques/scheduled-task-job/
+  - https://www.microsoft.com/en-us/security/blog/2022/04/12/tarrask-malware-uses-scheduled-tasks-for-defense-evasion/
+author: Kevin Flint
+date: 2025-11-19
+modified: 2025-11-19
+tags:
+  - attack.persistence
+  - attack.privilege-escalation
+  - attack.t1053.005
+  - xdr
+  - windows
+logsource:
+  product: xdr
+  table: DeviceProcessEvents
+  category: process_creation
+kql: |
+  let procs = dynamic(["schtasks.exe"]);
+  DeviceProcessEvents
+  | where TimeGenerated between (datetime("{{ start_time }}") .. datetime("{{ end_time }}"))
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}{% if user_name %}| where AccountName contains "{{ user_name }}"
+  {% endif %}| where FileName has_any (procs) or InitiatingProcessFileName has_any (procs) or InitiatingProcessParentFileName has_any (procs)
+  | summarize Count=count(), FirstExecutionTime=min(TimeGenerated), LastExecutionTime=max(TimeGenerated) by AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, InitiatingProcessCommandLine, FileName, ProcessCommandLine
+  | sort by Count desc
+falsepositives:
+  - Legitimate system administrators creating or modifying scheduled tasks for maintenance
+  - Software installation and update processes that use scheduled tasks
+  - Enterprise management tools (SCCM, Intune) deploying scheduled tasks
+  - Backup solutions creating scheduled tasks for automated backups
+  - Monitoring and security tools using scheduled tasks for regular scans
+level: medium
+detection:
+  selection: {}
+  condition: ""

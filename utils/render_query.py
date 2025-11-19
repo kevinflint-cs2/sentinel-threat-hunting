@@ -1,16 +1,20 @@
-"""
-KQL Query Renderer CLI Tool.
+"""KQL Query Renderer CLI Tool.
 
 This script renders KQL query templates with variables from a YAML
 configuration file and outputs the result for review before execution.
 """
 
 import argparse
+import logging
+import os
 import sys
 from pathlib import Path
 
 from config_loader import load_config
+from dotenv import load_dotenv
 from query_template import get_template_variables, load_query_yaml, render_kql_file
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -20,6 +24,10 @@ def main():
     Loads a YAML config file and renders a KQL query template,
     displaying the result for review.
     """
+    # Load environment variables from .env (if present) so users can
+    # define default config/query paths via environment.
+    load_dotenv()
+
     # Set up argument parser
     parser = argparse.ArgumentParser(
         description="Render KQL query templates from YAML query files with YAML config variables",
@@ -43,15 +51,27 @@ Examples:
     parser.add_argument(
         "query_file",
         type=str,
-        help="Path to the YAML query file containing metadata and KQL template",
+        nargs="?",
+        default=os.getenv("QUERY_FILE_PATH"),
+        help=(
+            "Path to the YAML query file containing metadata and KQL template "
+            "(default: QUERY_FILE_PATH from .env, if set)"
+        ),
     )
 
     parser.add_argument(
         "-c",
         "--config",
         type=str,
-        default="investigations/example-case/config.yaml",
-        help="Path to YAML config file (default: investigations/example-case/config.yaml)",
+        default=os.getenv(
+            "INVESTIGATION_CONFIG_PATH",
+            "investigations/example-case/config.yaml",
+        ),
+        help=(
+            "Path to YAML config file "
+            "(default: investigations/example-case/config.yaml or "
+            "INVESTIGATION_CONFIG_PATH from .env)"
+        ),
     )
 
     parser.add_argument(
@@ -63,16 +83,23 @@ Examples:
     # Parse arguments
     args = parser.parse_args()
 
+    # Ensure we have a query file, either from CLI or environment
+    if not args.query_file:
+        logger.error(
+            "Error: No query file provided. Pass a path as an argument or set QUERY_FILE_PATH in .env."
+        )
+        sys.exit(1)
+
     # Validate query file exists
     query_path = Path(args.query_file)
     if not query_path.exists():
-        print(f"Error: Query file not found: {args.query_file}", file=sys.stderr)
+        logger.error("Error: Query file not found: %s", args.query_file)
         sys.exit(1)
 
     # Validate config file exists
     config_path = Path(args.config)
     if not config_path.exists():
-        print(f"Error: Config file not found: {args.config}", file=sys.stderr)
+        logger.error("Error: Config file not found: %s", args.config)
         sys.exit(1)
 
     try:
@@ -80,73 +107,73 @@ Examples:
         query_data = load_query_yaml(args.query_file)
 
         # Display query metadata
-        print("=" * 70)
-        print("QUERY METADATA:")
-        print("=" * 70)
-        print(f"Title: {query_data.get('title', 'N/A')}")
-        print(f"ID: {query_data.get('id', 'N/A')}")
-        print(f"Author: {query_data.get('author', 'N/A')}")
-        print(f"Status: {query_data.get('status', 'N/A')}")
-        print(f"Level: {query_data.get('level', 'N/A')}")
+        logger.info("%s", "=" * 70)
+        logger.info("QUERY METADATA:")
+        logger.info("%s", "=" * 70)
+        logger.info("Title: %s", query_data.get("title", "N/A"))
+        logger.info("ID: %s", query_data.get("id", "N/A"))
+        logger.info("Author: %s", query_data.get("author", "N/A"))
+        logger.info("Status: %s", query_data.get("status", "N/A"))
+        logger.info("Level: %s", query_data.get("level", "N/A"))
 
         if "tags" in query_data and query_data["tags"]:
-            print(f"Tags: {', '.join(query_data['tags'])}")
+            logger.info("Tags: %s", ", ".join(query_data["tags"]))
 
         if "description" in query_data:
-            print(f"\nDescription:\n  {query_data['description']}")
+            logger.info("\nDescription:\n  %s", query_data["description"])
 
         if "logsource" in query_data:
             logsource = query_data["logsource"]
-            print("\nLog Source:")
+            logger.info("\nLog Source:")
             if "product" in logsource:
-                print(f"  Product: {logsource['product']}")
+                logger.info("  Product: %s", logsource["product"])
             if "table" in logsource:
-                print(f"  Table: {logsource['table']}")
+                logger.info("  Table: %s", logsource["table"])
             if "category" in logsource:
-                print(f"  Category: {logsource['category']}")
+                logger.info("  Category: %s", logsource["category"])
 
-        print("=" * 70)
-        print()
+        logger.info("%s", "=" * 70)
+        logger.info("")
 
         # Show template variables if requested
         if args.show_variables:
             kql_template = query_data["kql"]
             variables = get_template_variables(kql_template)
-            print("=" * 70)
-            print("TEMPLATE VARIABLES REQUIRED:")
-            print("=" * 70)
+            logger.info("%s", "=" * 70)
+            logger.info("TEMPLATE VARIABLES REQUIRED:")
+            logger.info("%s", "=" * 70)
             for var in variables:
-                print(f"  - {var}")
-            print("=" * 70)
-            print()
+                logger.info("  - %s", var)
+            logger.info("%s", "=" * 70)
+            logger.info("")
 
         # Load configuration
-        print(f"Loading config: {args.config}")
+        logger.info("Loading config: %s", args.config)
         config = load_config(args.config)
-        print(f"✓ Loaded {len(config)} configuration variables")
-        print()
+        logger.info("✓ Loaded %d configuration variables", len(config))
+        logger.info("")
 
         # Render the query
-        print(f"Rendering query: {args.query_file}")
+        logger.info("Rendering query: %s", args.query_file)
         rendered_query = render_kql_file(args.query_file, config)
-        print("✓ Query rendered successfully")
-        print()
+        logger.info("✓ Query rendered successfully")
+        logger.info("")
 
         # Display the rendered query
-        print("=" * 70)
-        print("RENDERED KQL QUERY:")
-        print("=" * 70)
-        print(rendered_query)
-        print("=" * 70)
-        print()
+        logger.info("%s", "=" * 70)
+        logger.info("RENDERED KQL QUERY:")
+        logger.info("%s", "=" * 70)
+        logger.info("%s", rendered_query)
+        logger.info("%s", "=" * 70)
+        logger.info("")
 
         # Summary
-        print("✓ Query ready for execution")
-        print(f"  Config used: {args.config}")
-        print(f"  Query file: {args.query_file}")
+        logger.info("✓ Query ready for execution")
+        logger.info("  Config used: %s", args.config)
+        logger.info("  Query file: %s", args.query_file)
 
     except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
+        logger.exception("Error: %s", str(e))
         sys.exit(1)
 
 

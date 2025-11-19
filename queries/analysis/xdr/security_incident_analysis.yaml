@@ -1,0 +1,40 @@
+title: Security Incident Analysis
+id: 96ea7e90-381e-409d-81a8-4ad6b552c75c
+status: test
+description: Identifies Microsoft Sentinel Incidents created in response to security
+  alerts, providing insights into potential threats and vulnerabilities within the
+  environment.
+references:
+- https://learn.microsoft.com/en-us/azure/sentinel/manage-soc-with-incident-metrics
+- https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/securityincident
+author: Kevin Flint
+date: '2025-11-19'
+modified: '2025-11-19'
+tags:
+- xdr
+- security incident
+- microsoft sentinel
+- incident analysis
+- threat detection
+logsource:
+  product: windows
+  table: SecurityIncident
+  category: xdr
+kql: 'SecurityIncident
+
+  | where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time
+  }}))
+
+  {% if device_name and user_name %}| where * contains "{{ device_name }}" or * contains
+  "{{ user_name }}"
+
+  {% elif device_name %}| where * contains "{{ device_name }}"
+
+  {% elif user_name %}| where * contains "{{ user_name }}"
+
+  {% endif %}'
+falsepositives:
+- Legitimate security incidents created by security operations teams.
+- Incidents generated from known benign alerts or activities.
+- RH Red Team activity and/or Protivity Offensive Security activity.
+level: high

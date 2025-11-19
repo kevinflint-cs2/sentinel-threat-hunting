@@ -17,7 +17,7 @@ Guide GitHub Copilot through an eight-phase development process that enforces de
 - **Authority Level:** Agent mode with file read/write and terminal execution
 - **Required Context:**
   - Project structure under `functions/` and `function_app.py`
-  - Testing framework (pytest with markers)
+   - Testing framework (`pytest`)
   - Quality tools (ruff, mypy)
   - Related prompt files: `implementation-pattern.prompt.md`, `testing.prompt.md`, `linting-typechecking.prompt.md`, `documentation.prompt.md`, `commit-and-merge.prompt.md`
 - **Prerequisites:**
@@ -149,9 +149,7 @@ git pull origin main
 
 1. Execute testing workflow:
    - Invoke `./docs/development/testing.prompt.md` guidance
-   - Run unit tests: `pytest -m "unit" -vv`
-   - Run endpoint tests: `pytest -m "endpoint" -vv`
-   - Run safe live tests: `pytest -m "live" -vv` (if applicable)
+   - Run tests: `pytest -vv`
 2. Report results:
    - Tests passed/failed/skipped (with counts)
    - Top failing tests with one-line explanations
