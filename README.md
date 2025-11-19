@@ -19,15 +19,18 @@ This repository provides:
 ```
 sentinel-threat-hunting/
 ├── queries/                    # KQL hunting queries organized by MITRE ATT&CK
-│   ├── lateral-movement.kql
-│   ├── privilege-escalation.kql
-│   ├── persistence.kql
-│   ├── command-and-control.kql
-│   ├── credential-access.kql
-│   └── data-exfiltration.kql
+│   ├── analysis/              # Analysis queries for threat hunting
+│   │   └── xdr/              # XDR-specific queries
+│   ├── mitre/                # MITRE ATT&CK organized queries
+│   ├── untested/             # Queries pending validation
+│   └── README.md
 ├── playbooks/                  # Logic App automation playbooks
 │   ├── ip-enrichment-playbook.json
 │   ├── host-isolation-playbook.json
+│   └── README.md
+├── investigations/             # Investigation case files
+│   ├── example-case/         # Example investigation configuration
+│   │   └── config.yaml       # Investigation variables and parameters
 │   └── README.md
 ├── detections/                 # Scheduled analytics rules
 ├── tests/                      # Testing and validation tools
@@ -35,6 +38,10 @@ sentinel-threat-hunting/
 │   ├── test_queries.py
 │   └── README.md
 ├── utils/                      # Helper scripts and utilities
+│   ├── config_loader.py      # YAML configuration loader
+│   ├── query_template.py     # KQL template renderer
+│   ├── render_query.py       # CLI tool for rendering queries
+│   └── kql_query.py          # KQL query execution
 └── README.md
 ```
 
@@ -44,8 +51,99 @@ sentinel-threat-hunting/
 - Azure Subscription with Microsoft Sentinel enabled
 - Log Analytics workspace configured
 - Appropriate data connectors enabled (SecurityEvent, CommonSecurityLog, etc.)
+- Python 3.12+ (for query rendering and utilities)
+- Poetry (Python dependency management)
 
-### 1. Deploy Queries
+### 1. Setup Environment
+
+```bash
+# Clone repository
+git clone https://github.com/kevinflint-cs2/sentinel-threat-hunting.git
+cd sentinel-threat-hunting
+
+# Install Python dependencies
+poetry install
+```
+
+### 2. Configure Investigation Variables
+
+Create an investigation configuration file with your search parameters:
+
+```yaml
+# investigations/my-case/config.yaml
+investigation_name: "Suspicious Activity Investigation"
+investigator: "Security Analyst"
+created_date: "2025-11-19"
+
+# Time range for queries
+start_time: "2025-11-17T00:00:00Z"
+end_time: "2025-11-19T23:59:59Z"
+
+# Entity identifiers
+device_name: "LAPTOP-ABC123"
+user_name: "john.doe"
+ip_address: "192.168.1.100"
+domain: "contoso.com"
+
+# Process information
+process_name: "powershell.exe"
+parent_process: "cmd.exe"
+file_path: "C:\\Users\\john.doe\\suspicious.exe"
+
+# Threat indicators
+suspicious_hash: "abc123def456..."
+known_bad_ip: "10.0.0.1"
+```
+
+### 3. Render Queries with Investigation Variables
+
+Use the query rendering tool to substitute your investigation parameters into query templates:
+
+```bash
+# Render a query with your investigation config
+poetry run poe render queries/analysis/xdr/process_chain_analysis.yaml -c investigations/my-case/config.yaml
+
+# Show required variables for a query
+poetry run poe render queries/analysis/xdr/process_chain_analysis.yaml --show-variables
+
+# Or use Python directly
+poetry run python utils/render_query.py queries/analysis/xdr/process_chain_analysis.yaml -c investigations/my-case/config.yaml
+```
+
+**Example Output:**
+```
+======================================================================
+QUERY METADATA:
+======================================================================
+Title: Process Chain Analysis
+ID: 69e64f51-d680-4870-9b0a-d32ddf242c87
+Author: Kevin Flint
+Status: test
+Level: low
+Tags: attack.execution, attack.defense-evasion, attack.t1055
+
+Description:
+  Analyzes process execution chains for a specific user and/or device...
+
+Log Source:
+  Product: windows
+  Table: DeviceProcessEvents
+  Category: process_creation
+======================================================================
+
+RENDERED KQL QUERY:
+======================================================================
+DeviceProcessEvents
+| where TimeGenerated between (2025-11-17T00:00:00Z .. 2025-11-19T23:59:59Z)
+| where DeviceName contains "LAPTOP-ABC123"
+| where AccountName contains "john.doe"
+| extend Combined = strcat_delim(":", AccountName, InitiatingProcessParentFileName, ...)
+| summarize Count=count(), LastExecutionTime=max(Timestamp) by AccountName, ...
+| sort by Count desc
+======================================================================
+```
+
+### 4. Deploy Queries
 
 **Option A: Manual Import**
 ```bash
@@ -103,6 +201,91 @@ python tests/validate_kql.py
 
 # Run tests
 python tests/test_queries.py
+```
+
+## 📊 Query Template System
+
+### YAML Query Format
+
+Queries are stored as YAML files with metadata and parameterized KQL templates:
+
+```yaml
+title: Process Chain Analysis
+id: 69e64f51-d680-4870-9b0a-d32ddf242c87
+status: test
+description: Analyzes process execution chains for a specific user and/or device
+author: Security Analyst
+date: '2025-11-19'
+modified: '2025-11-19'
+tags:
+  - attack.execution
+  - attack.defense-evasion
+  - attack.t1055
+logsource:
+  product: windows
+  table: DeviceProcessEvents
+  category: process_creation
+kql: |
+  DeviceProcessEvents
+  | where TimeGenerated between ({{ start_time }} .. {{ end_time }})
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}{% if user_name %}| where AccountName contains "{{ user_name }}"
+  {% endif %}| project Timestamp, DeviceName, AccountName, FileName
+falsepositives:
+  - Legitimate administrative activity
+  - Software installations
+level: medium
+```
+
+### Variable Templating
+
+Queries support Jinja2 template variables for dynamic parameter substitution:
+
+**Available Variables:**
+- `device_name`: Target device/hostname
+- `user_name`: User account name
+- `ip_address`: IP address for filtering
+- `domain`: Domain name
+- `start_time`: Query start time (ISO format)
+- `end_time`: Query end time (ISO format)
+- `process_name`: Process executable name
+- `parent_process`: Parent process name
+- `file_path`: File path for filtering
+- `suspicious_hash`: File hash indicator
+- `known_bad_ip`: Known malicious IP
+
+**Template Features:**
+```jinja2
+{# Simple variable substitution #}
+| where DeviceName == "{{ device_name }}"
+
+{# Conditional filtering (optional parameters) #}
+{% if user_name %}| where AccountName contains "{{ user_name }}"
+{% endif %}
+
+{# Time range filtering #}
+| where TimeGenerated between ({{ start_time }} .. {{ end_time }})
+```
+
+### CLI Usage
+
+**Render a query:**
+```bash
+poe render <query_file.yaml> -c <config.yaml>
+```
+
+**Show required variables:**
+```bash
+poe render <query_file.yaml> --show-variables
+```
+
+**Examples:**
+```bash
+# Render process chain analysis
+poe render queries/analysis/xdr/process_chain_analysis.yaml -c investigations/my-case/config.yaml
+
+# Check what variables a query needs
+poe render queries/analysis/xdr/process_chain_analysis.yaml --show-variables
 ```
 
 ## 📊 Query Categories
@@ -250,6 +433,47 @@ cat tests/test-results.json
 ```
 
 ## 📈 Usage Examples
+
+### Investigation Workflow
+
+**1. Create Investigation Folder**
+```bash
+mkdir -p investigations/incident-12345
+```
+
+**2. Create Configuration File**
+```yaml
+# investigations/incident-12345/config.yaml
+investigation_name: "Incident 12345 - Ransomware Investigation"
+investigator: "SOC Analyst"
+created_date: "2025-11-19"
+
+start_time: "2025-11-18T14:00:00Z"
+end_time: "2025-11-19T02:00:00Z"
+
+device_name: "SRV-FILE-01"
+user_name: "compromised.user"
+ip_address: "192.168.10.50"
+suspicious_hash: "a3b2c1..."
+```
+
+**3. Render and Execute Queries**
+```bash
+# Render process chain analysis
+poe render queries/analysis/xdr/process_chain_analysis.yaml \
+  -c investigations/incident-12345/config.yaml > output.kql
+
+# Copy rendered KQL to Sentinel
+# Execute in Sentinel → Logs
+# Document findings in investigation folder
+```
+
+**4. Iterate and Refine**
+```bash
+# Update config with new findings
+# Render additional queries as needed
+# Build timeline of attacker activity
+```
 
 ### Running a Hunt
 
@@ -406,6 +630,15 @@ For issues, questions, or suggestions:
 - Contribute improvements via pull requests
 
 ## 🔄 Version History
+
+- **v2.0.0** (2025-11-19): YAML Query Template System
+  - Added YAML-based query format with metadata
+  - Implemented Jinja2 template variable system
+  - Created investigation config framework
+  - Added CLI query rendering tool
+  - Standardized variable naming (snake_case)
+  - Comprehensive testing (38 unit tests)
+  - Type checking and linting compliance
 
 - **v1.0.0** (2025-11-17): Initial release
   - 6 query categories with 40+ hunting queries

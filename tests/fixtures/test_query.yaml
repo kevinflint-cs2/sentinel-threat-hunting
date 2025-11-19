@@ -1,0 +1,22 @@
+title: Test Query for Unit Tests
+id: test-uuid-12345-67890
+status: test
+description: Sample query used for testing query template rendering functionality
+author: Test Author
+date: '2025-11-19'
+modified: '2025-11-19'
+tags:
+  - test.category
+  - test.technique
+logsource:
+  product: windows
+  table: DeviceProcessEvents
+  category: process_creation
+kql: |
+  DeviceProcessEvents
+  | where DeviceName == "{{ device_name }}"
+  | where AccountName == "{{ user_name }}"
+  | project Timestamp, DeviceName, AccountName, FileName
+falsepositives:
+  - Test environment activity
+level: test

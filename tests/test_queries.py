@@ -76,7 +76,6 @@ class KQLTester:
         query_results: list[dict] = []
 
         for idx, query in enumerate(queries, 1):
-
             test_result = self.test_query_syntax(query)
 
             if test_result["syntax_valid"]:
@@ -133,7 +132,6 @@ def main():
     if not query_dir.exists():
         sys.exit(1)
 
-
     tester = KQLTester(workspace_id, tenant_id)
     tester.authenticate()
 
@@ -152,7 +150,6 @@ def main():
     for result in all_results:
         "✅" if result["failed"] == 0 else "❌"
 
-
     # Save results
     results_file = Path(__file__).parent / "test-results.json"
     with open(results_file, "w") as f:
@@ -166,7 +163,6 @@ def main():
             f,
             indent=2,
         )
-
 
     sys.exit(0 if total_failed == 0 else 1)
 
