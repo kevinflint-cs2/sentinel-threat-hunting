@@ -1,16 +1,3 @@
----
-post_title: "Microsoft Sentinel Threat Hunting — AI-Assisted Query Creation"
-author1: "Kevin Flint"
-post_slug: "sentinel-threat-hunting"
-microsoft_alias: "kevfli02"
-featured_image: ""
-categories: ["Security", "Threat Hunting", "Azure Sentinel"]
-tags: ["KQL", "AI", "Threat Hunting", "Automation"]
-ai_note: "AI used for README and query creation guidance"
-summary: "AI-assisted platform for creating, testing, and analyzing Microsoft Sentinel KQL queries with investigation-driven workflows."
-post_date: "2025-11-21"
----
-
 ## Microsoft Sentinel Threat Hunting — AI-Assisted Query Creation
 
 ### Overview
