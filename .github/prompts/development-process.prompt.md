@@ -1,11 +1,11 @@
 ---
-description: 'Execute structured 8-phase development workflow for Azure Functions features'
+description: 'Execute structured 8-phase development workflow for Sentinel Threat Hunting features with review gates.'
 agent: 'agent'
 ---
 
 # Development Process — Structured Feature Implementation
 
-Execute a structured, review-first workflow for implementing new features in this Azure Functions repository. Each phase requires explicit user approval before proceeding to the next.
+Execute a structured, review-first workflow for implementing new features Sentinel Threat Hunting. Each phase requires explicit user approval before proceeding to the next.
 
 ## Mission
 
@@ -13,13 +13,13 @@ Guide GitHub Copilot through an eight-phase development process that enforces de
 
 ## Scope & Preconditions
 
-- **Target Repository:** Azure Functions app (Python) for security enrichment APIs
 - **Authority Level:** Agent mode with file read/write and terminal execution
 - **Required Context:**
-  - Project structure under `functions/` and `function_app.py`
+   - Code under ./utils
+   - Queries under ./queries
    - Testing framework (`pytest`)
-  - Quality tools (ruff, mypy)
-  - Related prompt files: `implementation-pattern.prompt.md`, `testing.prompt.md`, `linting-typechecking.prompt.md`, `documentation.prompt.md`, `commit-and-merge.prompt.md`
+   - Quality tools (ruff, mypy)
+   - Related prompt files: `testing.prompt.md`, `linting-typechecking.prompt.md`, `documentation.prompt.md`, `commit-and-merge.prompt.md`
 - **Prerequisites:**
   - Virtual environment activated (`.venv`)
   - Dependencies installed (requirements.txt, requirements-dev.txt)
@@ -27,7 +27,7 @@ Guide GitHub Copilot through an eight-phase development process that enforces de
 
 ## Inputs
 
-- **Feature Request:** User describes the capability to implement (e.g., "Add URLScan.io search endpoint")
+- **Feature Request:** User describes the capability to implement
 - **Current Phase:** Defaults to Phase 1 unless explicitly specified
 - **Approval Status:** User must explicitly approve to advance between phases
 

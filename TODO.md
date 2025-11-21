@@ -1,0 +1,7 @@
+- [ ] Setup Pre-Commit Hooks
+- [ ] Move most .env's to config.yaml
+- [ ] Move Utils to a class
+- [ ] Rebuild documentation
+    - [ ] Implementation
+    - [ ] Setup
+    - [ ] Usage

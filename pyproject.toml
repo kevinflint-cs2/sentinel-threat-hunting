@@ -33,6 +33,7 @@ notebook = "^7.0.0"
 poethepoet = "^0.24.0"
 types-requests = "^2.31.0"
 types-pyyaml = "^6.0.12.20250915"
+pre-commit = "^4.4.0"
 
 [tool.poe.tasks]
 validate = "python tests/validate_kql.py"
