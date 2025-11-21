@@ -1,0 +1,37 @@
+title: SetThreatContext Remote API Code Injection Detection
+id: 7e2e2e2a-2b6e-4e7e-9c2a-2e2e2e2e2e2e
+status: test
+description: |
+  Detects potential code injection activity leveraging the SetThreatContextRemoteApiCall action in DeviceEvents. This query identifies instances where suspicious processes (as defined in configuration) are involved in remote API calls that may indicate process injection or manipulation. Useful for uncovering advanced attack techniques involving remote context modification on endpoints.
+references:
+  - https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/advanced-hunting-deviceevents
+  - https://attack.mitre.org/techniques/T1055/
+  - https://www.sentinelone.com/blog/process-injection-techniques-attackers-use-to-evade-detection/
+  - https://docs.sigmahq.io/specification/
+  - https://posts.specterops.io/remote-process-injection-via-setthreadcontext-9a6c4b6b8f6b
+author: Kevin Flint
+date: 2025-11-20
+modified: 2025-11-20
+tags:
+  - attack.t1055
+  - attack.execution
+  - xdr
+  - windows
+  - process-injection
+  - setthreadcontext
+  - remote-api-call
+logsource:
+  product: xdr
+  table: DeviceEvents
+  category: process_creation
+kql: "DeviceEvents\n| where TimeGenerated between (datetime({{ start_time }}) .. datetime({{ end_time }}))\n{% if device_name is defined %}\n| where DeviceName contains \"{{ device_name }}\"\n{% endif %}\n{% if user_name is defined %}\n| where AccountName contains \"{{ user_name }}\"\n{% endif %}\n| where ActionType == \"SetThreatContextRemoteApiCall\"\n{% if process_names is defined %}\n| where InitiatingProcessFileName has_any (dynamic({{ process_names }}))\n    or FileName has_any (dynamic({{ process_names }}))\n    or InitiatingProcessParentFileName has_any (dynamic({{ process_names }}))\n{% endif %}"
+falsepositives:
+  - Legitimate remote administration tools using SetThreadContext.
+  - Software deployment or update mechanisms.
+  - Security or monitoring agents performing process injection.
+  - Backup or automation scripts.
+  - IT troubleshooting utilities.
+level: high
+detection:
+  selection: {}
+  condition: ""

@@ -29,8 +29,7 @@ Treat all uppercase tokens below as environment variables that the host applicat
 
 2. **Process Chain Activity Results**
    - Expect the primary results CSV at:
-     - `INVESTIGATION_PATH/results/analysis/xdr/process_chain_analysis.csv`
-   - If the `results` folder does not exist under `INVESTIGATION_PATH`, instruct the host to create it before writing any output.
+     - `INVESTIGATION_PATH/analysis/xdr/process_chain_analysis.csv`
    - Load this CSV into a tabular structure (Pandas DataFrame or equivalent).
 
 3. **Sample DeviceProcessEvents Data**
@@ -39,6 +38,10 @@ Treat all uppercase tokens below as environment variables that the host applicat
    - Use this sample to:
      - Understand column names and typical values.
      - Inform your KQL patterns and detection logic.
+4. **Baselines**
+   - Baseline files (if present) are expected under:
+     - `INVESTIGATION_PATH/baselines`
+   - Use these to help classify known-good patterns and reduce noise.
 
 4. **Field Semantics (Critical for Analysis)**
    - `InitiatingProcessParentFileName`: Grand parent process.
@@ -52,11 +55,21 @@ Treat all uppercase tokens below as environment variables that the host applicat
 
 Follow this structured workflow for each run:
 
-1. **Setup & Data Loading**
-   - Confirm `INVESTIGATION_PATH` and derived paths.
-   - Ensure `INVESTIGATION_PATH/results` exists; if not, instruct the host to create it.
-   - Load:
-     - Process chain results CSV: `INVESTIGATION_PATH/results/analysis/xdr/process_chain_analysis.csv`.
+1. **Setup, Path Checks & Data Loading**
+   - Confirm `INVESTIGATION_PATH` and derive the following paths:
+     - `analysis/xdr` folder: `INVESTIGATION_PATH/analysis/xdr`
+     - `reports` folder: `INVESTIGATION_PATH/reports`
+     - `baselines` folder: `INVESTIGATION_PATH/baselines`
+     - Process chain CSV: `INVESTIGATION_PATH/analysis/xdr/process_chain_analysis.csv`
+   - For each of these, check for existence and display the result (found/missing):
+     - `analysis/xdr` folder
+     - `reports` folder
+     - `baselines` folder
+     - Process chain CSV file
+   - If the `baselines` folder is present, display it as found and enumerate any files (e.g., DeviceProcessEvents.csv) within it.
+   - Await explicit user approval after displaying these checks before proceeding with analysis.
+   - Once approved, load:
+     - Process chain results CSV: `INVESTIGATION_PATH/analysis/xdr/process_chain_analysis.csv`.
      - Sample data: `INVESTIGATION_PATH/DeviceProcessEvents.csv` (if present).
    - Verify required columns exist; if any are missing, note this in the report and adapt analysis.
 
@@ -127,7 +140,7 @@ Follow this structured workflow for each run:
 ## Report Generation
 
 Write the final report to:
-- `INVESTIGATION_PATH/results/process-chain-analysis.md`
+- `INVESTIGATION_PATH/reports/process-chain-analysis.md`
 
 The report must be Markdown and follow this structure:
 

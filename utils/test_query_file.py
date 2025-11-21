@@ -160,8 +160,8 @@ def main() -> None:
         )
 
     if detailed_output:
-        logger.info("Query file path: %s", query_file_path)
-        logger.info("Investigation config file path: %s", investigation_config_path)
+        print(f"Query file path: {query_file_path}")
+        print(f"Investigation config file path: {investigation_config_path}")
 
     # ------------------------------------------------------------------
     # Read and validate YAML
@@ -172,20 +172,19 @@ def main() -> None:
     validation_result = validate_query_yaml(yaml_data)
 
     if not validation_result.is_valid:
-        logger.error("[YAML CHECK] ❌ FAILED")
+        print("[YAML CHECK] ❌ FAILED")
         if detailed_output:
-            logger.error("YAML validation errors:")
+            print("YAML validation errors:")
             for err in validation_result.errors:
-                logger.error("  - %s", err)
+                print(f"  - {err}")
         return
-
-    logger.info("[YAML CHECK] ✅ PASSED")
+    print("[YAML CHECK] ✅ PASSED")
 
     if detailed_output:
-        logger.info("Title: %s", yaml_data.get("title"))
-        logger.info("ID: %s", yaml_data.get("id"))
-        logger.info("Status: %s", yaml_data.get("status"))
-        logger.info("Logsource table: %s", yaml_data.get("logsource", {}).get("table"))
+        print(f"Title: {yaml_data.get('title')}")
+        print(f"ID: {yaml_data.get('id')}")
+        print(f"Status: {yaml_data.get('status')}")
+        print(f"Logsource table: {yaml_data.get('logsource', {}).get('table')}")
 
     # ------------------------------------------------------------------
     # Load investigation config and render the KQL
@@ -193,7 +192,7 @@ def main() -> None:
     config = load_config(str(investigation_config_path))
 
     if detailed_output:
-        logger.info("\nLoaded investigation config summary:")
+        print("\nLoaded investigation config summary:")
         for key in [
             "device_name",
             "devicename",
@@ -203,21 +202,35 @@ def main() -> None:
             "end_time",
         ]:
             if key in config:
-                logger.info("  %s: %s", key, config[key])
+                print(f"  {key}: {config[key]}")
 
     try:
         rendered_query = render_kql_file(str(query_file_path), config)
     except Exception as exc:  # noqa: BLE001
-        logger.error("[RENDER] ❌ FAILED")
+        print("[RENDER] ❌ FAILED")
         if detailed_output:
-            logger.exception("Error while rendering KQL query: %s: %s", type(exc).__name__, exc)
+            print(f"Error while rendering KQL query: {type(exc).__name__}: {exc}")
         return
-
-    logger.info("[RENDER] ✅ SUCCEEDED")
+    print("[RENDER] ✅ SUCCEEDED")
 
     if detailed_output:
-        logger.info("\nRendered KQL query:\n")
-        logger.info("%s", rendered_query)
+        print("\nRendered KQL query:\n")
+        print(rendered_query)
+
+    # Pre-check for unresolved template variables in the rendered KQL
+    import re
+
+    unresolved_vars = re.findall(
+        r"\b(start_time|end_time|device_name|user_name|process_names|ip_address|domain|parent_process|file_path|suspicious_hash|known_bad_ip)\b",
+        rendered_query,
+    )
+    if unresolved_vars:
+        print("[PRE-CHECK] ❌ FAILED")
+        print(f"Unresolved template variables found in rendered KQL: {set(unresolved_vars)}")
+        print(
+            "Please ensure all required variables are provided in the investigation config or template."
+        )
+        return
 
     # ------------------------------------------------------------------
     # Execute the rendered KQL against the Sentinel workspace
@@ -226,7 +239,7 @@ def main() -> None:
     client = LogsQueryClient(credential=credential)
 
     if detailed_output:
-        logger.info("\nExecuting query against workspace...")
+        print("\nExecuting query against workspace...")
 
     try:
         df = execute_kql_query(
@@ -235,23 +248,22 @@ def main() -> None:
             kql_query=rendered_query,
         )
     except Exception as exc:  # noqa: BLE001
-        logger.error("[QUERY EXECUTION] ❌ FAILED")
-        logger.exception("Error: %s: %s", type(exc).__name__, exc)
+        print("[QUERY EXECUTION] ❌ FAILED")
+        print(f"Error: {type(exc).__name__}: {exc}")
         if detailed_output:
-            logger.info("\nFull traceback available with DETAILED_OUTPUT=1")
+            print("\nFull traceback available with DETAILED_OUTPUT=1")
         return
 
     record_count = len(df.index)
-    logger.info("[QUERY EXECUTION] ✅ SUCCEEDED")
-    logger.info("[RESULTS] Records returned: %d", record_count)
+    print("[QUERY EXECUTION] ✅ SUCCEEDED")
+    print(f"[RESULTS] Records returned: {record_count}")
 
     if detailed_output:
-        logger.info("\nQuery execution completed. Sample results:")
+        print("\nQuery execution completed. Sample results:")
         with pd.option_context("display.max_rows", 5, "display.max_columns", None):
-            logger.info("%s", df.head())
-
-    logger.info("\n✓ Query file validation and execution completed successfully at")
-    logger.info("  %sZ", datetime.now().isoformat())
+            print(df.head())
+        print("\n✓ Query file validation and execution completed successfully at")
+        print(f"  {datetime.now().isoformat()}Z")
 
 
 if __name__ == "__main__":  # pragma: no cover

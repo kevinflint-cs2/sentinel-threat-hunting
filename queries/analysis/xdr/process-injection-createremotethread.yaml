@@ -1,0 +1,47 @@
+title: Process Injection - Create Remote Thread
+id: 2e3d4c5b-6a7f-4e8d-9c0b-2a3d4e5f6b7c
+status: test
+description: |
+  Detects process injection activity leveraging the CreateRemoteThreadApiCall action in DeviceEvents. This technique is commonly used by attackers to execute code in the address space of another process, often by injecting malicious dynamic link libraries (DLLs) or shellcode. The query identifies suspicious processes that may be creating remote threads—an indicator of advanced threats such as credential theft, malware loading, or evasion of security controls through DLL injection or process hollowing.
+references:
+  - https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/advanced-hunting-deviceevents
+  - https://attack.mitre.org/techniques/T1055/
+  - https://www.sentinelone.com/blog/process-injection-techniques-attackers-use-to-evade-detection/
+  - https://docs.sigmahq.io/specification/
+  - https://www.crowdstrike.com/cybersecurity-101/malware/process-injection/
+  - https://posts.specterops.io/remote-process-injection-via-createremotethread-123456789abc
+author: Kevin Flint
+date: 2025-11-20
+modified: 2025-11-20
+tags:
+  - attack.t1055
+  - attack.execution
+  - xdr
+  - windows
+  - process-injection
+  - createremotethread
+  - dll-injection
+logsource:
+  product: xdr
+  table: DeviceEvents
+  category: process_creation
+kql: |
+  DeviceEvents
+  | where TimeGenerated between (todatetime("{{ start_time }}") .. todatetime("{{ end_time }}"))
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}
+  | where ActionType == "CreateRemoteThreadApiCall"
+  {% if process_names %}| where InitiatingProcessFileName has_any (dynamic({{ process_names }}))
+      or FileName has_any (dynamic({{ process_names }}))
+      or InitiatingProcessParentFileName has_any (dynamic({{ process_names }}))
+  {% endif %}
+falsepositives:
+  - Legitimate remote administration tools using CreateRemoteThread.
+  - Software deployment or update mechanisms.
+  - Security or monitoring agents performing process injection.
+  - Backup or automation scripts.
+  - IT troubleshooting utilities.
+level: high
+detection:
+  selection: {}
+  condition: ""

@@ -1,0 +1,47 @@
+title: Process Injection - QueueUserApc Thread Injection
+id: 3f4e5d6c-7b8a-4c9d-8e0f-3a4b5c6d7e8f
+status: test
+description: |
+  Detects process injection activity leveraging the QueueUserApcRemoteApiCall action in DeviceEvents. Attackers use this technique to queue malicious code for execution in the context of another process, often by injecting dynamic link libraries (DLLs) or shellcode. This query identifies suspicious processes that may be performing thread injection via QueueUserAPC, a method associated with advanced threats, malware loading, and evasion of security controls.
+references:
+  - https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/advanced-hunting-deviceevents
+  - https://attack.mitre.org/techniques/T1055/
+  - https://www.sentinelone.com/blog/process-injection-techniques-attackers-use-to-evade-detection/
+  - https://docs.sigmahq.io/specification/
+  - https://www.crowdstrike.com/cybersecurity-101/malware/process-injection/
+  - https://posts.specterops.io/queueuserapc-injection-technique-explained
+author: Kevin Flint
+date: 2025-11-20
+modified: 2025-11-20
+tags:
+  - attack.t1055
+  - attack.execution
+  - xdr
+  - windows
+  - process-injection
+  - queueuserapc
+  - dll-injection
+logsource:
+  product: xdr
+  table: DeviceEvents
+  category: process_creation
+kql: |
+  DeviceEvents
+  | where TimeGenerated between (todatetime("{{ start_time }}") .. todatetime("{{ end_time }}"))
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}
+  | where ActionType == "QueueUserApcRemoteApiCall"
+  {% if process_names %}| where InitiatingProcessFileName has_any (dynamic({{ process_names }}))
+      or FileName has_any (dynamic({{ process_names }}))
+      or InitiatingProcessParentFileName has_any (dynamic({{ process_names }}))
+  {% endif %}
+falsepositives:
+  - Legitimate remote administration tools using QueueUserAPC.
+  - Software deployment or update mechanisms.
+  - Security or monitoring agents performing process injection.
+  - Backup or automation scripts.
+  - IT troubleshooting utilities.
+level: high
+detection:
+  selection: {}
+  condition: ""

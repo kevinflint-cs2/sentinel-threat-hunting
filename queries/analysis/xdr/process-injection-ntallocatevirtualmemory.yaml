@@ -1,0 +1,46 @@
+title: Process Injection Using NTAllocateVirtualMemory
+id: 7b1e2c3d-4f5a-4b6c-8d9e-1a2b3c4d5e6f
+status: test
+description: |
+  Detects potential process injection activity using the NtAllocateVirtualMemoryRemoteApiCall action in DeviceEvents. This query identifies suspicious processes involved in remote memory allocation, which may indicate advanced attack techniques or process manipulation.
+references:
+  - https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/advanced-hunting-deviceevents
+  - https://attack.mitre.org/techniques/T1055/
+  - https://www.sentinelone.com/blog/process-injection-techniques-attackers-use-to-evade-detection/
+  - https://docs.sigmahq.io/specification/
+  - https://posts.specterops.io/remote-process-injection-via-ntallocatevirtualmemory
+author: Kevin Flint
+date: 2025-11-20
+modified: 2025-11-20
+tags:
+  - attack.t1055
+  - attack.execution
+  - xdr
+  - windows
+  - process-injection
+  - ntallocatevirtualmemory
+  - remote-api-call
+logsource:
+  product: xdr
+  table: DeviceEvents
+  category: process_creation
+kql: |
+  DeviceEvents
+  | where TimeGenerated between (todatetime("{{ start_time }}") .. todatetime("{{ end_time }}"))
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}
+  | where ActionType == "NtAllocateVirtualMemoryRemoteApiCall"
+  {% if process_names %}| where InitiatingProcessFileName has_any (dynamic({{ process_names }}))
+      or FileName has_any (dynamic({{ process_names }}))
+      or InitiatingProcessParentFileName has_any (dynamic({{ process_names }}))
+  {% endif %}
+falsepositives:
+  - Legitimate remote administration tools using NtAllocateVirtualMemory.
+  - Software deployment or update mechanisms.
+  - Security or monitoring agents performing process injection.
+  - Backup or automation scripts.
+  - IT troubleshooting utilities.
+level: high
+detection:
+  selection: {}
+  condition: ""

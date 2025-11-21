@@ -37,17 +37,26 @@ Wrap them as:
 {% endif %}
 ```
 
+
 **CRITICAL RULE - READ THIS CAREFULLY:**
 
-When templating, only replace literal values (for example user, device,
-IP) with `{{ variable }}` and keep the **EXACT original comparison operator**
-from the raw KQL.
+When templating, only replace literal values (for example user, device, IP) with `{{ variable }}` and keep the **EXACT original comparison operator** from the raw KQL.
 
 - If the raw query used `contains`, the templated version MUST use `contains`
 - If the raw query used `has`, the templated version MUST use `has`
 - If the raw query used `has_any`, the templated version MUST use `has_any`
 - If the raw query used `==`, the templated version MUST use `==`
 - If the raw query used `=~`, the templated version MUST use `=~`
+
+**When templating for `has_any` or any operator that expects a dynamic array, you MUST wrap the array variable with `dynamic({{ variable | tojson }})` in the KQL.**
+
+For example:
+
+```jinja
+| where FileName has_any (dynamic({{ file_names | tojson }}))
+```
+
+This ensures the rendered KQL is always valid and avoids syntax errors from raw JSON arrays.
 
 **DO NOT CHANGE OPERATORS. EVER. NOT EVEN TO "IMPROVE" THE QUERY.**
 
@@ -187,10 +196,17 @@ DeviceProcessEvents
 | summarize Count=count() by AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, Combined
 ```
 
-### Expected Output (single-line string for YAML `kql` field)
+### Expected Output (multi-line string for YAML `kql` field)
 
-```text
-DeviceProcessEvents\n| where TimeGenerated between ({{ start_time }} .. {{ end_time }})\n{% if device_name %}| where DeviceName contains \"{{ device_name }}\"\n{% endif %}{% if user_name %}| where AccountName contains \"{{ user_name }}\"\n{% endif %}| extend Combined = strcat_delim(\":\", AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName)\n| summarize Count=count(), LastExecutionTime=max(Timestamp) by AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, Combined \n| sort by Count desc
+```yaml
+kql: |
+   DeviceProcessEvents
+   | where TimeGenerated between (todatetime("{{ start_time }}") .. todatetime("{{ end_time }}"))
+   {% if device_name %}| where DeviceName contains "{{ device_name }}"
+   {% endif %}{% if user_name %}| where AccountName contains "{{ user_name }}"
+   {% endif %}| extend Combined = strcat_delim(":", AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName)
+   | summarize Count=count(), LastExecutionTime=max(Timestamp) by AccountName, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, Combined
+   | sort by Count desc
 ```
 
 When you receive a new raw KQL query as input, follow the same transformation pattern and return **only** the final Jinja-templated KQL string ready to paste into a YAML `kql` field.

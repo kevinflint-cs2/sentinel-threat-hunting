@@ -121,11 +121,15 @@ def main() -> None:
     else:
         investigation_root = config_path.parent
 
+    # Change: Save results directly under 'analysis/xdr' (sibling to queries/analysis/xdr)
+    # Instead of inside a 'results' subfolder, use the 'analysis/xdr' directory directly.
+    # This will match the user's desired output location.
+    # If INVESTIGATION_RESULTS_PATH is set, use it; otherwise, default to repo_root / 'analysis' / 'xdr'.
     results_root = Path(
         os.getenv(
             "INVESTIGATION_RESULTS_PATH",
-            investigation_root / "results",
-        ),
+            str(repo_root / "analysis" / "xdr"),
+        )
     )
 
     if not config_path.exists():

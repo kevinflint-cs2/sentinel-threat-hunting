@@ -52,8 +52,9 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.per-file-ignores]
-# Allow prints in small helper scripts under `scripts/` without lint failures
+# Allow prints in small helper scripts under `scripts/` and test harnesses
 "scripts/*.py" = ["T201"]
+"utils/test_query_file.py" = ["T201"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "A", "C4", "T20"]

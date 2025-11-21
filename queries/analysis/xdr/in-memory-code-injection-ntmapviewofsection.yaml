@@ -1,0 +1,47 @@
+title: In-Memory Code Injection using NTMapViewOfSection
+id: f4b3a8d2-6c8e-4f1a-9b2c-7d3e5f6a8c9d
+status: test
+description: >
+  Detects suspicious in-memory code mapping activities on Windows by identifying calls
+  to `NtMapViewOfSectionRemoteApiCall` tied to a specific host. This behavior often
+  indicates process injection or remote section mapping used to run code in another
+  process's memory, commonly employed for stealthy execution and defense evasion.
+  Investigate correlated process creation, parent-child relationships, and unusual
+  module mappings to validate.
+references:
+  - https://attack.mitre.org/techniques/T1055/
+  - https://learn.microsoft.com/windows/win32/api/winternl/nf-winternl-ntmapviewofsection
+  - https://www.mandiant.com/resources/blog/process-injection-techniques-and-detection
+author: Kevin Flint
+date: "2025-11-20"
+modified: "2025-11-20"
+tags:
+  - attack.t1055
+  - attack.execution
+  - attack.defense-evasion
+  - windows
+  - memory
+  - xdr
+  - process_injection
+logsource:
+  product: xdr
+  table: DeviceEvents
+  category: process_injection
+kql: |
+  DeviceEvents
+  | where TimeGenerated between (datetime("{{ start_time }}") .. datetime("{{ end_time }}"))
+  {%- if device_name %}
+  | where DeviceName contains "{{ device_name }}"
+  {%- endif %}
+  {%- if user_name %}
+  | where AccountName contains "{{ user_name }}"
+  {%- endif %}
+  {%- if process_names and process_names|length > 0 %}
+  | where InitiatingProcessFileName has_any (dynamic({{ process_names | tojson }})) or FileName has_any (dynamic({{ process_names | tojson }})) or InitiatingProcessParentFileName has_any (dynamic({{ process_names | tojson }}))
+  {%- endif %}
+  | where ActionType == "NtMapViewOfSectionRemoteApiCall"
+falsepositives: []
+level: critical
+detection:
+  selection: {}
+  condition: ""

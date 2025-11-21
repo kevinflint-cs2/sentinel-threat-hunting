@@ -1,0 +1,41 @@
+title: Persistence using Auto Startup Folder
+id: 7e2b1c8e-4a3b-4e2e-9b7a-2e8c1f7d9a6b
+status: test
+description: This query hunts for persistence techniques by monitoring file creations or modifications in Windows startup folders (both system-wide and user-specific), which adversaries may exploit to ensure malicious executables run automatically on system boot. It targets specific devices and users to identify unauthorized changes that could indicate malware installation or privilege escalation attempts.
+references:
+- https://attack.mitre.org/techniques/T1547/001/
+- https://learn.microsoft.com/en-us/windows/win32/shell/knownfolderid
+- https://github.com/SigmaHQ/sigma/blob/master/rules/windows/file_event/file_event_win_startup_folder.yml
+- https://www.microsoft.com/en-us/security/blog/2021/01/20/deep-dive-into-the-solorigate-second-stage-activation-from-sunburst-to-teardrop-and-raindrop/
+- https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4663
+author: Kevin Flint
+date: 2025-11-20
+modified: 2025-11-20
+tags:
+- attack.persistence
+- attack.t1547.001
+- xdr
+- windows
+- file_event
+logsource:
+  product: xdr
+  table: DeviceFileEvents
+  category: file_event
+kql: |
+  DeviceFileEvents
+  | where TimeGenerated between (todatetime("{{ start_time }}") .. todatetime("{{ end_time }}"))
+  {% if device_name %}| where DeviceName contains "{{ device_name }}"
+  {% endif %}{% if user_name %}| where InitiatingProcessAccountName contains "{{ user_name }}"
+  {% endif %}| where ActionType in ("FileCreated", "FileModified")
+  | where FolderPath contains "Startup"
+        or FolderPath contains "Start Menu"
+falsepositives:
+- Legitimate software installations or updates adding shortcuts to startup folders.
+- Users manually adding application shortcuts for convenience.
+- System maintenance scripts or administrative tools deploying startup entries.
+- Backup or recovery software restoring startup configurations.
+- Group policy or IT-managed deployments of startup items.
+level: medium
+detection:
+  selection: {}
+  condition: ""

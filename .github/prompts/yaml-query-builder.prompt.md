@@ -53,7 +53,7 @@ The target YAML must contain at least the following fields:
   - `product` (string)
   - `table` (string)
   - `category` (string)
-- `kql` (single-line string with embedded `\n` like in `process_chain_analysis.yaml`)
+- `kql` (multi-line string, formatted as a YAML block scalar per the guidance in `docs/prompts/kql-assistant.prompt.md`)
 - `falsepositives` (list of strings)
 - `level` (string: low, medium, high, critical)
 
@@ -155,17 +155,14 @@ Who should be listed as the author for this rule?
 
 ### 10. `kql`
 
-- Take the raw KQL from the user and **optimize it** using the dedicated KQL templating prompt `docs/prompts/kql-assistant.prompt.md` as a conceptual guide.
-- **CRITICAL**: When templating, NEVER change comparison operators. If the raw KQL uses `contains`, keep `contains`. If it uses `has_any`, keep `has_any`. DO NOT change `contains` to `=~` or `==`. DO NOT change `has_any` to `has`.
-- Apply, as appropriate:
-  - Standard time filtering using `start_time` and `end_time` variables.
-  - Optional filters for `device_name`, `user_name`, `ip_address`, `domain`, `process_name`, `parent_process`, `file_path`, `suspicious_hash`, `known_bad_ip` using Jinja `if` blocks as in the existing queries.
-  - Summaries and sorting patterns consistent with `process_chain_analysis.yaml` and the repository's README.
-  - **PRESERVE ALL OPERATORS EXACTLY AS WRITTEN IN THE RAW KQL**.
-- Output the final KQL as a **single string** formatted like `process_chain_analysis.yaml`:
-  - Use `\n` for line breaks.
-  - Escape double quotes as `\"`.
-  - Do **not** include backticks or Markdown code fences in the YAML value.
+
+All KQL formatting, templating, and output rules are governed by the dedicated KQL assistant prompt: `docs/prompts/kql-assistant.prompt.md`. Always refer to that file for the latest requirements on:
+  - Block scalar (multi-line) YAML formatting for the `kql` field
+  - Jinja templating conventions
+  - Quoting and escaping rules (including for `todatetime()`)
+  - Operator preservation and all other KQL transformation logic
+
+Do not duplicate or override KQL formatting rules here—treat `kql-assistant.prompt.md` as the single source of truth for KQL output.
 
 ### 11. `falsepositives`
 
@@ -234,10 +231,20 @@ Suggested filename: security-incident-analysis.yaml
 - Output only the final YAML document, ready to be saved
 - **Prompt:** "Approve YAML for testing/validation (Phase 7)?"
 
+
 **Phase 7: Test/Validate (if applicable)**
-- Optionally run validation/test script if user requests
-- Execute tests using `pytest -vv` and report results
-- Report results (pass/fail, record count, errors)
+
+- Update the `.env` file to set `QUERY_FILE_PATH` to the YAML query file being tested.
+- Run the test using `poetry run python -m utils.test_query_file` (module-style invocation).
+- If errors occur:
+  - Update `.env` to set `DETAILED_OUTPUT=1`.
+  - Re-run the test to capture detailed error output.
+  - Provide a high-level summary of what needs to be changed and in which files.
+  - Request user approval before making any code changes.
+- If successful:
+  - Extract the `kql` field from the YAML file.
+  - Display the KQL for user approval before running `render_query.py` with it.
+
 - **Prompt:** "Approve to proceed to Phase 8 (Final QA)?"
 
 **Phase 8: Final QA Checklist**
@@ -250,7 +257,6 @@ Suggested filename: security-incident-analysis.yaml
 - **Prompt:** "Workflow complete. Ready for next query or commit."
 
 **At every phase:**
-- Do not output YAML or code until all approvals are complete
 - Wait for explicit user approval before advancing
 
 ## Style and Safety
